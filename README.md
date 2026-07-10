@@ -74,8 +74,14 @@ keypad, timers, and the DSP/radio block. See [`docs/ARCHITECTURE.md`](docs/ARCHI
   headless IDA Pro 9.1 to recover functions with **exact boundaries** (forcing raw ARM to
   32-bit Thumb, which IDA otherwise loads as AArch64). 507 functions, real multi-block
   extents, 94% of instructions lift and compile clean.
+- [x] **Guest self-dispatch** — [`gen_register.py`](recompiler/gen_register.py) registers
+  every lifted function at its guest address; the runtime's `nk_call` routes a guest
+  address to the matching native function. Verified: a real 6100 function runs via the
+  table and calls into the corpus; unlifted callees are reported by address (the bring-up
+  worklist). Env aids `NK_TRACE` / `NK_MAX_CALLS` for bring-up. Fixed a Thumb-2 CBZ/CBNZ
+  mislift found by the larger corpus.
 - [ ] Seed the ARM reset/vector table + follow calls → full-image coverage (mixed ARM/Thumb)
-- [ ] Runtime: MMIO trap layer + boot the reset vector
+- [ ] Runtime: MMIO trap layer + boot the reset vector → **first light** (boot logo)
 - [ ] HLE the display controller → **Nokia boot logo on a host window** (first-light goal)
 - [ ] Keypad + timers → navigable idle menu (Snake, the app list)
 - [ ] Stub the radio → the phone boots to "no network" and just *runs*

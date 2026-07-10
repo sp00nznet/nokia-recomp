@@ -42,11 +42,29 @@ static nk_fn lookup(uint32_t addr) {
     return NULL;
 }
 
+/* Bring-up aids (env-controlled): NK_TRACE logs resolved calls; NK_MAX_CALLS caps
+ * total dispatches so a mislifted loop can't spin forever. */
+static int  g_trace = -1;
+static long g_calls = 0, g_max = 0;
+
 void nk_call(nk_cpu_t* c, uint32_t guest_addr) {
-    nk_fn fn = lookup(guest_addr & ~1u);   /* Thumb targets carry bit0=1 */
-    if (fn) { fn(c); return; }
-    fprintf(stderr, "[nk_call] no function at %#010x (lr=%#010x)\n",
-            guest_addr, c->r[14]);
+    if (g_trace < 0) {
+        g_trace = getenv("NK_TRACE") ? 1 : 0;
+        const char* m = getenv("NK_MAX_CALLS");
+        g_max = m ? atol(m) : 0;
+    }
+    if (g_max && ++g_calls > g_max) {
+        fprintf(stderr, "[nk_call] call budget %ld exhausted\n", g_max);
+        return;
+    }
+    uint32_t a = guest_addr & ~1u;   /* Thumb targets carry bit0=1 */
+    nk_fn fn = lookup(a);
+    if (fn) {
+        if (g_trace) fprintf(stderr, "[nk_call] -> %#010x\n", a);
+        fn(c);
+        return;
+    }
+    fprintf(stderr, "[nk_call] no function at %#010x (lr=%#010x)\n", guest_addr, c->r[14]);
 }
 
 void nk_unimplemented(nk_cpu_t* c, uint32_t guest_addr, const char* what) {

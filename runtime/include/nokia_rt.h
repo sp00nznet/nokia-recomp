@@ -80,6 +80,7 @@ typedef void (*nk_fn)(nk_cpu_t*);
 void nk_register(uint32_t guest_addr, nk_fn fn);   /* populate the table at startup */
 void nk_call(nk_cpu_t* c, uint32_t guest_addr);    /* bl / indirect / tail dispatch */
 void nk_unimplemented(nk_cpu_t* c, uint32_t guest_addr, const char* what);
+void nk_game_register(void);                       /* register all lifted funcs (generated) */
 
 #ifdef __cplusplus
 }

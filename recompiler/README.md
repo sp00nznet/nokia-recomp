@@ -32,6 +32,8 @@ NPL-2dp_..._mcu05.80.exe ──(7z + i6comp)──▶ npl2__05.800   (Nokia dp/F
 - **`lift.py`** — the lifter (pure Python + Capstone). Decodes ARM/Thumb and emits C
   against `nk_cpu_t` (see `../runtime/include/`). Thumb-aware (PC = addr+4, 2-byte
   decode, 2-operand data-processing forms). `py lift.py --self-test`.
+- **`gen_register.py`** — emit `nk_register()` for every lifted function → `game_register.c`,
+  so the firmware calls its own functions natively through the runtime dispatch table.
   `../docs/FIRMWARE-FORMAT.md`).
 
 ## What it emits

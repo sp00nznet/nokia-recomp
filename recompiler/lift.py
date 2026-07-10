@@ -120,6 +120,15 @@ class Lifter:
             return "    " + self._guard(cc, f"{setlr}nk_call(c, {tgt});") + cmt
 
         if ins.group(CS_GRP_JUMP):
+            # Thumb-2 compare-and-branch: `cbz/cbnz rN, #target` -> if (rN ==/!= 0) goto.
+            if base in ("cbz", "cbnz"):
+                reg = self.reg(ins, ins.operands[0].reg, ins.address)
+                tgt = ins.operands[1].imm & 0xffffffff
+                cond = "==" if base == "cbz" else "!="
+                body = (f"if ({reg} {cond} 0) goto L_{tgt:08x};" if tgt in headset
+                        else f"if ({reg} {cond} 0) {{ nk_call(c, {tgt:#x}u); return; }}")
+                self.stats["lifted"] += 1
+                return "    " + body + cmt
             op = ins.operands[0]
             if op.type == ARM_OP_REG:
                 if op.reg == ARM_REG_LR: stmt = "return;"
@@ -383,6 +392,11 @@ class Lifter:
         labels = set(); self._jumptables = {}
         for addr, ins in decoded:
             if ins.group(CS_GRP_JUMP) and not ins.group(CS_GRP_CALL):
+                jm = ins.mnemonic.split('.')[0]
+                if jm in ("cbz", "cbnz"):
+                    t = ins.operands[1].imm & 0xffffffff
+                    if t in headset: labels.add(t)
+                    continue
                 op = ins.operands[0]
                 if op.type == ARM_OP_IMM and (op.imm & 0xffffffff) in headset:
                     labels.add(op.imm & 0xffffffff)
