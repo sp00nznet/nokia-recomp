@@ -84,10 +84,11 @@ class Lifter:
             base = self.reg(ins, op.reg, pc)
             st, sv = op.shift.type, op.shift.value
             if st and sv:
-                if st == ARM_SFT_LSL: return f"({base} << {sv})"
-                if st == ARM_SFT_LSR: return f"({base} >> {sv})"
-                if st == ARM_SFT_ASR: return f"((uint32_t)((int32_t){base} >> {sv}))"
-                if st == ARM_SFT_ROR: return f"(({base} >> {sv}) | ({base} << {32 - sv}))"
+                # ARM encodes LSR/ASR #32 (shift-by-32); C shifts by >= width are UB.
+                if st == ARM_SFT_LSL: return f"({base} << {sv})" if sv < 32 else "0u"
+                if st == ARM_SFT_LSR: return f"({base} >> {sv})" if sv < 32 else "0u"
+                if st == ARM_SFT_ASR: return f"((uint32_t)((int32_t){base} >> {sv if sv < 32 else 31}))"
+                if st == ARM_SFT_ROR: return f"(({base} >> {sv}) | ({base} << {32 - sv}))" if sv else base
                 rs = {ARM_SFT_LSL_REG: "nk_lsl", ARM_SFT_LSR_REG: "nk_lsr",
                       ARM_SFT_ASR_REG: "nk_asr", ARM_SFT_ROR_REG: "nk_ror"}.get(st)
                 if rs: return f"{rs}({base}, {self.reg(ins, sv, pc)})"

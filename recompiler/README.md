@@ -19,9 +19,16 @@ NPL-2dp_..._mcu05.80.exe ──(7z + i6comp)──▶ npl2__05.800   (Nokia dp/F
 
 - **`dct4decrypt.py`** — de-scramble a DCT4 MCU/PPM image (g3gg0's DCT4Crypt,
   keyless, auto-detects the CryptKey). `py dct4decrypt.py --self-test`.
-- **`extract.py`** — scan the raw image for Thumb functions (`push {..,lr}` →
-  clean return) → `functions.json`. IDA (`e:\ida`) can supply exact boundaries later
-  via the same JSON shape.
+- **`extract.py`** — quick Thumb function scanner (`push {..,lr}` → clean return),
+  no IDA needed → `functions.json`.
+- **`extract_ida.py`** — the same `functions.json`, but with **exact IDA boundaries**.
+  Runs inside headless IDA (`idat.exe`); forces 32-bit ARM + Thumb on the raw image
+  (IDA defaults raw ARM to AArch64 — this flips `inf` bitness, segment addressing, and
+  the `T` register), seeds Thumb prologues, and lets IDA's analysis recover multi-block
+  functions. On the 6100: 507 functions, 94% of instructions lift.
+  ```
+  idat -A -a -c -Tbinary -parm -b0x100000 -S"extract_ida.py out.json" 6100_mcu.bin
+  ```
 - **`lift.py`** — the lifter (pure Python + Capstone). Decodes ARM/Thumb and emits C
   against `nk_cpu_t` (see `../runtime/include/`). Thumb-aware (PC = addr+4, 2-byte
   decode, 2-operand data-processing forms). `py lift.py --self-test`.

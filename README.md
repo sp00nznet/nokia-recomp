@@ -70,7 +70,11 @@ keypad, timers, and the DSP/radio block. See [`docs/ARCHITECTURE.md`](docs/ARCHI
   from ngagerecomp) → compiles clean under clang → **executes natively.** A lifted 6100
   function ran with the correct result (`r5<<3`, stack balanced); 93% of instructions
   lift. Runtime CPU model in [`runtime/`](runtime/) ([`nokia_rt.h`](runtime/include/nokia_rt.h)).
-- [ ] Whole-image function recovery (IDA via `e:\ida` for exact boundaries) + full lift
+- [x] **IDA-driven extraction** — [`extract_ida.py`](recompiler/extract_ida.py) drives
+  headless IDA Pro 9.1 to recover functions with **exact boundaries** (forcing raw ARM to
+  32-bit Thumb, which IDA otherwise loads as AArch64). 507 functions, real multi-block
+  extents, 94% of instructions lift and compile clean.
+- [ ] Seed the ARM reset/vector table + follow calls → full-image coverage (mixed ARM/Thumb)
 - [ ] Runtime: MMIO trap layer + boot the reset vector
 - [ ] HLE the display controller → **Nokia boot logo on a host window** (first-light goal)
 - [ ] Keypad + timers → navigable idle menu (Snake, the app list)
