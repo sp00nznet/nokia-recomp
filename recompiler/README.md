@@ -24,8 +24,10 @@ NPL-2dp_..._mcu05.80.exe ──(7z + i6comp)──▶ npl2__05.800   (Nokia dp/F
 - **`extract_ida.py`** — the same `functions.json`, but with **exact IDA boundaries**.
   Runs inside headless IDA (`idat.exe`); forces 32-bit ARM + Thumb on the raw image
   (IDA defaults raw ARM to AArch64 — this flips `inf` bitness, segment addressing, and
-  the `T` register), seeds Thumb prologues, and lets IDA's analysis recover multi-block
-  functions. On the 6100: 507 functions, 94% of instructions lift.
+  the `T` register), seeds Thumb prologues, then follows the BL/BLX call graph to a
+  fixpoint and reports coverage. On the 6100: 603 functions, 94% of instructions lift.
+  `NK_SWEEP=1` adds an aggressive linear sweep (~44% of the image decodes as Thumb, but
+  it over-fragments — research only; the reset vector + fn-ptr tables are the clean path).
   ```
   idat -A -a -c -Tbinary -parm -b0x100000 -S"extract_ida.py out.json" 6100_mcu.bin
   ```

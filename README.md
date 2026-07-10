@@ -70,10 +70,15 @@ keypad, timers, and the DSP/radio block. See [`docs/ARCHITECTURE.md`](docs/ARCHI
   from ngagerecomp) → compiles clean under clang → **executes natively.** A lifted 6100
   function ran with the correct result (`r5<<3`, stack balanced); 93% of instructions
   lift. Runtime CPU model in [`runtime/`](runtime/) ([`nokia_rt.h`](runtime/include/nokia_rt.h)).
-- [x] **IDA-driven extraction** — [`extract_ida.py`](recompiler/extract_ida.py) drives
-  headless IDA Pro 9.1 to recover functions with **exact boundaries** (forcing raw ARM to
-  32-bit Thumb, which IDA otherwise loads as AArch64). 507 functions, real multi-block
-  extents, 94% of instructions lift and compile clean.
+- [x] **IDA-driven extraction + call-graph** — [`extract_ida.py`](recompiler/extract_ida.py)
+  drives headless IDA Pro 9.1 for **exact boundaries** (forcing raw ARM to 32-bit Thumb,
+  which IDA otherwise loads as AArch64), then follows the BL/BLX call graph to a fixpoint:
+  603 high-confidence functions, 94% of instructions lift and compile clean.
+- [ ] **Coverage frontier** — the clean call-graph reaches ~1.3% of the image; a linear
+  sweep shows ~44% (2.37 MB) *decodes* as Thumb, but code and compressed data are
+  interleaved and Thumb is dense, so a raw sweep over-fragments. Clean high coverage needs
+  the **ARM reset vector** as the call-graph root + resolving function-pointer tables
+  (vtables / callback arrays) — the main RE task ahead.
 - [x] **Guest self-dispatch** — [`gen_register.py`](recompiler/gen_register.py) registers
   every lifted function at its guest address; the runtime's `nk_call` routes a guest
   address to the matching native function. Verified: a real 6100 function runs via the

@@ -66,8 +66,81 @@ for ea in cands:
     if idc.print_insn_mnem(ea) == "PUSH" and not ida_funcs.get_func(ea):
         if ida_funcs.add_func(ea): seeded += 1
 ida_auto.auto_wait()
-nfuncs = len(list(idautils.Functions(s0, s1)))
-print("[extract] seeded %d; funcs after analysis: %d" % (seeded, nfuncs))
+print("[extract] seeded %d; funcs after prologue pass: %d"
+      % (seeded, len(list(idautils.Functions(s0, s1)))))
+
+# Fixpoint: every BL/BLX call target is a function start. Follow the call graph
+# (and re-seed push-lr prologues that opened up) until nothing new appears.
+import ida_xref
+for it in range(30):
+    targets = set()
+    for fea in idautils.Functions(s0, s1):
+        f = ida_funcs.get_func(fea)
+        for head in idautils.Heads(f.start_ea, f.end_ea):
+            for xr in idautils.XrefsFrom(head, 0):
+                if xr.type in (ida_xref.fl_CN, ida_xref.fl_CF) and s0 <= xr.to < s1:
+                    targets.add(xr.to)
+    new = 0
+    for t in targets:
+        if not ida_funcs.get_func(t):
+            idc.create_insn(t)
+            if ida_funcs.add_func(t): new += 1
+    # also re-seed any push-lr prologue that is now in a gap
+    for ea in cands:
+        if not ida_funcs.get_func(ea) and idc.print_insn_mnem(ea) == "PUSH":
+            if ida_funcs.add_func(ea): new += 1
+    ida_auto.auto_wait()
+    print("[extract] round %d: +%d functions (total %d)"
+          % (it, new, len(list(idautils.Functions(s0, s1)))))
+    if new == 0:
+        break
+
+import os
+# Optional aggressive linear sweep (NK_SWEEP=1). It surfaces ~30% of the image as
+# "code" but over-fragments (Thumb is dense; compressed data also decodes), so it is
+# opt-in. Default keeps the high-confidence call-graph result.
+def byte_breakdown(tag):
+    code = data = unk = 0
+    ea = s0
+    while ea < s1:
+        fl = ida_bytes.get_flags(ea)
+        if ida_bytes.is_code(fl): code += 1
+        elif ida_bytes.is_data(fl): data += 1
+        else: unk += 1
+        sz = ida_bytes.get_item_size(ea)
+        ea += sz if sz > 0 else 1
+    print("[extract] %s: code=%d data=%d unknown=%d" % (tag, code, data, unk))
+    return code, data, unk
+
+if os.environ.get("NK_SWEEP"):
+    byte_breakdown("pre-sweep")
+    ea = s0; made = 0
+    while ea < s1 - 1:
+        if ida_bytes.is_unknown(ida_bytes.get_flags(ea)):
+            if idc.create_insn(ea): made += 1
+        sz = ida_bytes.get_item_size(ea)
+        ea += sz if sz > 0 else 2
+    ida_auto.auto_wait()
+    wrapped = 0; ea = s0
+    while ea < s1:
+        fl = ida_bytes.get_flags(ea)
+        if ida_bytes.is_code(fl) and not ida_funcs.get_func(ea):
+            if ida_funcs.add_func(ea): wrapped += 1
+        ea = ida_bytes.next_head(ea, s1)
+        if ea == idc.BADADDR: break
+    ida_auto.auto_wait()
+    print("[extract] linear sweep: +%d insns, +%d wrapped funcs (total %d)"
+          % (made, wrapped, len(list(idautils.Functions(s0, s1)))))
+    byte_breakdown("post-sweep")
+
+# Coverage report: how much of the image is code (in functions) vs everything else.
+code_bytes = 0
+for fea in idautils.Functions(s0, s1):
+    f = ida_funcs.get_func(fea)
+    code_bytes += f.end_ea - f.start_ea
+total = s1 - s0
+print("[extract] coverage: %d/%d bytes in functions (%.1f%%)"
+      % (code_bytes, total, 100.0 * code_bytes / total))
 
 funcs = []
 for ea in idautils.Functions(s0, s1):
