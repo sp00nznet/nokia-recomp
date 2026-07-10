@@ -65,8 +65,13 @@ keypad, timers, and the DSP/radio block. See [`docs/ARCHITECTURE.md`](docs/ARCHI
   Phones`, `Profile/MIDP-1.0`, and the menu engine — **~31k Thumb prologues of real code.**
 - [x] **Platform confirmed** — DCT4 / UPP / **ARM7TDMI (ARMv4T)**, MCU loads at
   `0x0100_0000`, Series 40 UI + MIDP Java. Same ISA as ngagerecomp → the lifter ports over.
-- [ ] Recover function boundaries; lift Thumb/ARM → C (port ngagerecomp's `lift.py`)
-- [ ] Runtime: ARM CPU model + MMIO trap layer
+- [x] **Lifter runs end-to-end** — [`extract.py`](recompiler/extract.py) (Thumb
+  function scanner) → [`lift.py`](recompiler/lift.py) (ARMv4T **+ Thumb** → C, ported
+  from ngagerecomp) → compiles clean under clang → **executes natively.** A lifted 6100
+  function ran with the correct result (`r5<<3`, stack balanced); 93% of instructions
+  lift. Runtime CPU model in [`runtime/`](runtime/) ([`nokia_rt.h`](runtime/include/nokia_rt.h)).
+- [ ] Whole-image function recovery (IDA via `e:\ida` for exact boundaries) + full lift
+- [ ] Runtime: MMIO trap layer + boot the reset vector
 - [ ] HLE the display controller → **Nokia boot logo on a host window** (first-light goal)
 - [ ] Keypad + timers → navigable idle menu (Snake, the app list)
 - [ ] Stub the radio → the phone boots to "no network" and just *runs*
