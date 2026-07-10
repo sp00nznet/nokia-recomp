@@ -1,0 +1,34 @@
+# nokia-recomp per-target configuration — Nokia 6100 (NPL-2, GSM, 2002)
+# PRIMARY / first target: DCT4 Series 40, and its firmware is DECRYPTABLE
+# (dct4decrypt, keyless). UPP / ARMv4T.
+
+[input]
+# Raw MCU image after dct4decrypt (recompiler/dct4decrypt.py) of the dp/.fls file.
+image     = "6100_mcu.bin"         # 5.43 MB decrypted Thumb/ARM image
+source    = "NPL-2dp_v_8.00_mcu05.80  ->  npl2__05.800  (Nokia dp/FLS container)"
+cpu       = "armv4t"               # ARM7TDMI MCU (Thumb + ARM) inside the UPP ASIC
+crypt_key = 0x026f                 # auto-detected DCT4 CryptKey (for reference)
+
+[platform]
+family = "DCT4"
+asic   = "UPP"                     # Universal Phone Processor (MCU + Lead DSP)
+ui     = "Series 40 (1st ed.)"     # colour menu UI + MIDP-1.0 Java apps
+# The firmware self-identifies: "Nokia6100", "Copyright (c) 2000 Nokia Mobile Phones",
+# "Profile/MIDP-1.0", and the menu engine ("MenuIdReserveResp", assert strings).
+
+[memory]
+mcu_flash_base = 0x1000000         # confirmed: DCT4 MCU images load at 0x0100_0000
+# ram_base     = 0x........        # TBC from disassembly
+
+[display]
+width  = 128
+height = 128
+color  = true                      # Series 40 128x128 colour
+
+[output]
+dir     = "out/"
+context = "n6100_cpu_t"
+
+[functions]
+# entry = 0x........               # reset vector — recover from the image head
+# hints = []
