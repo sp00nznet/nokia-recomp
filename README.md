@@ -65,37 +65,40 @@ keypad, timers, and the DSP/radio block. See [`docs/ARCHITECTURE.md`](docs/ARCHI
   Phones`, `Profile/MIDP-1.0`, and the menu engine — **~31k Thumb prologues of real code.**
 - [x] **Platform confirmed** — DCT4 / UPP / **ARM7TDMI (ARMv4T)**, MCU loads at
   `0x0100_0000`, Series 40 UI + MIDP Java. Same ISA as ngagerecomp → the lifter ports over.
-- [x] **Lifter runs end-to-end** — [`extract.py`](recompiler/extract.py) (Thumb
-  function scanner) → [`lift.py`](recompiler/lift.py) (ARMv4T **+ Thumb** → C, ported
-  from ngagerecomp) → compiles clean under clang → **executes natively.** A lifted 6100
-  function ran with the correct result (`r5<<3`, stack balanced); 93% of instructions
-  lift. Runtime CPU model in [`runtime/`](runtime/) ([`nokia_rt.h`](runtime/include/nokia_rt.h)).
+- [x] **Lifter runs end-to-end** — [`lift.py`](recompiler/lift.py) (ARMv4T **+ Thumb**
+  → C, ported from ngagerecomp) + the runtime CPU model in [`runtime/`](runtime/)
+  ([`nokia_rt.h`](runtime/include/nokia_rt.h)): a lifted 6100 function compiled under clang
+  and **executed natively** with the correct result (`r5<<3`, stack balanced).
 - [x] **IDA-driven extraction + call-graph** — [`extract_ida.py`](recompiler/extract_ida.py)
   drives headless IDA Pro 9.1 for **exact boundaries** (forcing raw ARM to 32-bit Thumb,
   which IDA otherwise loads as AArch64), then follows the BL/BLX call graph to a fixpoint:
-  603 high-confidence functions, 94% of instructions lift and compile clean.
-- [ ] **Coverage frontier** — the clean call-graph reaches ~1.3% of the image; a linear
-  sweep shows ~44% (2.37 MB) *decodes* as Thumb, but code and compressed data are
-  interleaved and Thumb is dense, so a raw sweep over-fragments. Clean high coverage needs
-  the **ARM reset vector** as the call-graph root + resolving function-pointer tables
-  (vtables / callback arrays) — the main RE task ahead.
+  **603 functions, 94% of instructions lift and compile clean.**
 - [x] **Guest self-dispatch** — [`gen_register.py`](recompiler/gen_register.py) registers
-  every lifted function at its guest address; the runtime's `nk_call` routes a guest
-  address to the matching native function. Verified: a real 6100 function runs via the
-  table and calls into the corpus; unlifted callees are reported by address (the bring-up
-  worklist). Env aids `NK_TRACE` / `NK_MAX_CALLS` for bring-up. Fixed a Thumb-2 CBZ/CBNZ
-  mislift found by the larger corpus.
-- [ ] Seed the ARM reset/vector table + follow calls → full-image coverage (mixed ARM/Thumb)
-- [ ] Runtime: MMIO trap layer + boot the reset vector → **first light** (boot logo)
-- [ ] HLE the display controller → **Nokia boot logo on a host window** (first-light goal)
+  every lifted function at its guest address; the runtime's `nk_call` routes a guest address
+  to the matching native function. Verified: a real 6100 function runs via the table and
+  calls into the corpus; unlifted callees are reported by address (the bring-up worklist).
+  Env aids `NK_TRACE` / `NK_MAX_CALLS`.
+
+**← current frontier →**
+
+- [ ] **Coverage** — the clean call-graph reaches ~1.3% of the image; a linear sweep shows
+  ~44% (2.37 MB) *decodes* as Thumb, but code and compressed data are interleaved and Thumb
+  is dense, so a raw sweep over-fragments. Clean high coverage needs the **ARM reset vector**
+  as the call-graph root (note: `dct4decrypt` leaves the `0x84`-byte flash header scrambled —
+  that's likely where the vector table lives) — the main RE task ahead.
+- [ ] Runtime: RAM + MMIO trap layer, then **boot the reset vector**
+- [ ] HLE the display controller → **first light: the Nokia boot logo on a host window**
 - [ ] Keypad + timers → navigable idle menu (Snake, the app list)
 - [ ] Stub the radio → the phone boots to "no network" and just *runs*
 
 
 ## Toolchain
 
-- **Python 3** — `dct4decrypt.py`, `unpack.py`, and (soon) the lifter.
-- **IDA / Ghidra** — analysis front end for the decrypted image.
+- **Python 3 + Capstone** — the recompiler (`dct4decrypt.py`, `extract.py`, `lift.py`,
+  `gen_register.py`).
+- **IDA Pro 9.1 (headless)** — exact function boundaries on the decrypted image
+  (`extract_ida.py`).
+- **clang** — compiles the generated C + runtime.
 - **ngagerecomp** — the ARMv4T lifter and CPU model this project reuses.
 
 ## Legal
