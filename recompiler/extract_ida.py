@@ -5,7 +5,7 @@ import json
 import ida_auto, ida_funcs, ida_bytes, ida_segment, ida_name, ida_idp
 import idautils, idc, ida_segregs, ida_ida
 
-OUT = idc.ARGV[1] if len(idc.ARGV) > 1 else r"E:\ida\work\nokia6100\functions.json"
+OUT = idc.ARGV[1] if len(idc.ARGV) > 1 else r"$IDA_WORK\nokia6100\functions.json"
 
 def bitness():
     for g in ("inf_get_app_bitness", "inf_is_64bit"):

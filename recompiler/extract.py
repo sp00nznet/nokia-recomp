@@ -7,7 +7,7 @@ The decrypted Series 40 firmware is Thumb. This scans for function prologues
 and emits functions.json (functions + the whole image as one segment) for lift.py.
 
 Heuristic, first-cut boundaries: a function runs from its `push {..,lr}` to the
-first return. Good enough to lift clean leaf functions; IDA (e:\\ida) can supply
+first return. Good enough to lift clean leaf functions; IDA can supply
 exact boundaries later via the same JSON shape.
 
     py extract.py 6100_mcu.bin functions.json [--base 0x1000000] [--limit N] [--max-bytes 512]
