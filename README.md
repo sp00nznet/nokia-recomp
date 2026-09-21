@@ -60,7 +60,7 @@ keypad, timers, and the DSP/radio block. See [`docs/ARCHITECTURE.md`](docs/ARCHI
 
 - [x] **Firmware descrambled → raw ARM in hand** — GSM DCT4 uses Nokia's *keyless*
   flash scrambling -- no key, no password. [`recompiler/dct4decrypt.py`](recompiler/dct4decrypt.py)
-  (a Python port of g3gg0's DCT4Crypt, self-tested) turns the 6100's `dp` file into a
+  (a Python port of [g3gg0's DCT4Crypt](https://github.com/g3gg0/DCT4Crypt), self-tested) turns the 6100's `dp` file into a
   5.43 MB raw image. It self-identifies: `Nokia6100`, `Copyright (c) 2000 Nokia Mobile
   Phones`, `Profile/MIDP-1.0`, and the menu engine — **~31k Thumb prologues of real code.**
 - [x] **Platform confirmed** — DCT4 / UPP / **ARM7TDMI (ARMv4T)**, MCU loads at
@@ -106,6 +106,22 @@ keypad, timers, and the DSP/radio block. See [`docs/ARCHITECTURE.md`](docs/ARCHI
 nokia-recomp ships **no copyrighted firmware or assets**. It is a tool. You supply
 your own legally-obtained Nokia firmware. Recompiled output is a derivative of *your*
 copy and is yours to run. Everything firmware-shaped is `.gitignore`d.
+
+**Purpose.** This project exists for **interoperability**: to let firmware you already
+own keep running on hardware you can actually buy, after the original hardware has
+become unobtainable. Everything here is aimed at that -- reading the image, recovering
+function boundaries, translating ARM to C, and supplying a runtime that answers what
+the firmware asks for. It is also a preservation and research exercise: a DCT4 phone is
+a complete, documented, self-contained computer small enough to understand end to end.
+
+**On the descrambler.** [`recompiler/dct4decrypt.py`](recompiler/dct4decrypt.py)
+reverses GSM DCT4's flash scrambling. That scrambling is **keyless** -- there is no
+secret, no password and no per-device key; it is a fixed, publicly documented
+transformation of the flash image, and the algorithm has been public for roughly two
+decades. This file is a Python port of [g3gg0's DCT4Crypt](https://github.com/g3gg0/DCT4Crypt),
+credited in full below and in the file's own header. It descrambles an image you
+supply; it does not unlock a device, defeat a password, or bypass a licence check.
+
 
 ## Prior art & thanks
 
